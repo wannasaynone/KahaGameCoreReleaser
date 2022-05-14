@@ -1,42 +1,14 @@
 using Zenject;
-using UnityEngine;
-using System.Collections;
 
 public class TestInstaller : MonoInstaller
 {
     public override void InstallBindings()
     {
-        Debug.Log("InstallBindings");
-        Container.Bind<string>().FromInstance("Hello World!");
-        Container.Bind<Greeter>().AsSingle();
-        Container.Bind<Tester>().AsTransient();
-    }
-
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.A))
-        {
-            Container.Resolve<Tester>().Call();
-        }
-    }
-}
-
-public class Greeter
-{
-    public Greeter(string message)
-    {
-        Debug.Log(message);
-    }
-}
-
-public class Tester
-{
-    [Inject]
-    public Greeter TestGreeter { get; private set; }
-
-    public void Call()
-    {
-        Debug.Log("TestGreeter.GetHashCode()=" + TestGreeter.GetHashCode());
-        Debug.Log("GetHashCode()=" + GetHashCode());//
+        // KahaGameCore
+        Container.Bind<KahaGameCore.Main.Core>().AsSingle();
+        Container.Bind<KahaGameCore.Common.IJsonReader>().To<KahaGameCore.Common.GameStaticDataDeserializer>().AsTransient();
+        Container.Bind<KahaGameCore.Common.IJsonWriter>().To<KahaGameCore.Common.GameStaticDataSerializer>().AsTransient();
+        Container.Bind<KahaGameCore.Common.GameStaticDataManager>().AsSingle();
+        Container.Bind<IInitializable>().To<Greeter>().AsSingle();
     }
 }
