@@ -1,4 +1,4 @@
-using KahaGameCore.EffectCommand;
+using KahaGameCore.Combat.Processor.EffectProcessor;
 using System;
 using System.Collections.Generic;
 using Zenject;
@@ -15,10 +15,10 @@ public class MyGameInstaller : MonoInstaller
 public class GreeterCreator : IInitializable, ITickable
 {
     private readonly EffectCommandFactoryContainer m_effectCommandFactoryContainer;
-    private readonly EffectProcesser.Facotry m_effectProcesserFacotry;
+    private readonly EffectProcessor.Facotry m_effectProcesserFacotry;
     private readonly EffectCommandDeserializer m_effectCommandDeserializer;
 
-    public GreeterCreator(EffectCommandFactoryContainer effectCommandFactoryContainer, EffectProcesser.Facotry effectProcesserFacotry, EffectCommandDeserializer effectCommandDeserializer)
+    public GreeterCreator(EffectCommandFactoryContainer effectCommandFactoryContainer, EffectProcessor.Facotry effectProcesserFacotry, EffectCommandDeserializer effectCommandDeserializer)
     {
         m_effectCommandFactoryContainer = effectCommandFactoryContainer;
         m_effectProcesserFacotry = effectProcesserFacotry;
@@ -30,19 +30,29 @@ public class GreeterCreator : IInitializable, ITickable
         m_effectCommandFactoryContainer.RegisterFactory("Greet", new GreetEffectCommandFatory());
     }
 
-    private int m_count = 0;
+    private List<EffectProcessor> m_allEffectProcessor = new List<EffectProcessor>();
     public void Tick()
     {
-        if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.X))
+        if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.Z))
         {
-            string _testData = "Stage1 { Greet(Hello-World-" + m_count.ToString() +");  }";
+            string _testData = "Stage1 { Greet(Hello-World-" + m_allEffectProcessor.Count.ToString() +");  }";
 
-            Dictionary<string, List<EffectProcesser.EffectData>> _deserializedDatas = m_effectCommandDeserializer.Deserialize(_testData);
-            EffectProcesser _newEffectProcesser = m_effectProcesserFacotry.Create();
+            Dictionary<string, List<EffectProcessor.EffectData>> _deserializedDatas = m_effectCommandDeserializer.Deserialize(_testData);
+            EffectProcessor _newEffectProcesser = m_effectProcesserFacotry.Create();
             _newEffectProcesser.SetUp(_deserializedDatas);
 
             UnityEngine.Debug.Log("Greeter created");
-            m_count++;
+            m_allEffectProcessor.Add(_newEffectProcesser);
+        }
+
+        if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.C))
+        {
+            if (m_allEffectProcessor.Count <= 0)
+                return;
+
+            UnityEngine.Debug.Log("Greeter deleted");
+            m_allEffectProcessor[m_allEffectProcessor.Count - 1].Dispose();
+            m_allEffectProcessor.RemoveAt(m_allEffectProcessor.Count - 1);
         }
     }
 }
@@ -60,6 +70,7 @@ public class GreeterCaller : ITickable
     {
         if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.Alpha1))
         {
+            UnityEngine.Debug.Log("GreeterCaller Fire");
             m_signalBus.Fire(new EffectTimingTriggedSignal(null, null, "Stage1"));
         }
     }
@@ -78,5 +89,6 @@ public class GreetEffectCommand : EffectCommandBase
     public override void Process(string[] vars, Action onCompleted, Action onForceQuit)
     {
         UnityEngine.Debug.Log("Greet Msg=" + vars[0]);
+        onCompleted?.Invoke();
     }
 }
